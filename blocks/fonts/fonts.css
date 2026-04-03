@@ -1,0 +1,8 @@
+@font-face {
+  src: url(./Mitr-Medium.ttf);
+  font-family: "Mitr";
+}
+
+body {
+  font-family: "Mitr", Arial, sans-serif;
+}

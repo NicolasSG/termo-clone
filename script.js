@@ -2,6 +2,7 @@ let rowIndex = 1;
 let pickWord = "";
 let globalWordList = [];
 let activeRow = null;
+let activeSquare = document.querySelector(".grid__letter_active");
 
 await initGame();
 
@@ -13,10 +14,13 @@ async function initGame() {
 
     // 2. Sorteia a palavra
     pickWord = await randomWord();
-    console.log("Palavra sorteada:", pickWord);
 
     // 3. Define a linha inicial
     activeRow = document.querySelector(`.grid__${rowIndex}_row`);
+    activeRow.classList.add("grid__row_active");
+    activeRow
+      .querySelector(".grid_letter_1")
+      .classList.add("grid__letter_active");
 
     // 4. Ativa os controles
     setupEventListeners();
@@ -27,6 +31,8 @@ async function initGame() {
 
 function setupEventListeners() {
   const keyboard = document.querySelector(".keyboard");
+  const hideMenuButton = document.querySelector(".header__hide");
+  const gridContainer = document.querySelector(".main__grid");
 
   keyboard.addEventListener("click", (e) => {
     const buttonClicked = e.target;
@@ -35,10 +41,44 @@ function setupEventListeners() {
     } else if (buttonClicked.classList.contains("kbd__enter")) {
       handleEnterAction();
     } else {
-      console.log("cade a letra");
       addLetter(buttonClicked.textContent);
     }
   });
+
+  hideMenuButton.addEventListener("click", (e) => {
+    hideAnimation();
+  });
+
+  gridContainer.addEventListener("click", (e) => {
+    // Verifica se o que foi clicado é um quadrado da linha ATIVA
+    if (
+      e.target.classList.contains("grid_letter") &&
+      e.target.parentElement === activeRow
+    ) {
+      changeActiveSquare(e);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    const key = e.key;
+
+    if (key === "Enter") {
+      handleEnterAction();
+    } else if (key === "Backspace") {
+      removeLetter();
+    } else if (key.length === 1 && isLetter(key)) {
+      addLetter(key.toUpperCase());
+    }
+  });
+}
+
+function hideAnimation() {
+  const headerGames = document.querySelector(".header__nav_games");
+  const headerMenus = document.querySelector(".header__nav_menus");
+  const hideButton = document.querySelector(".header__hide");
+  headerGames.classList.toggle("open");
+  headerMenus.classList.toggle("open");
+  hideButton.classList.toggle("rotate");
 }
 
 async function fetchJSONData(url) {
@@ -53,73 +93,129 @@ async function fetchJSONData(url) {
 }
 
 async function randomWord() {
-  const wordList = await fetchJSONData("./words.json"); // Espera a lista
+  const wordList = await fetchJSONData("./words.json");
   const randomIndex = Math.floor(Math.random() * wordList.length);
   const word = wordList[randomIndex];
-
+  console.log(word);
   return word;
 }
 
-function findEmptySquare() {
-  // Busca apenas dentro da linha ATIVA
+function changeActiveSquare(e) {
+  const clickedSquare = e.target;
   for (let i = 1; i <= 5; i++) {
     const square = activeRow.querySelector(`.grid_letter_${i}`);
-    if (square.textContent === "") return i;
+    square.classList.remove("grid__letter_active");
   }
-  return 0; // Linha cheia
+  clickedSquare.classList.add("grid__letter_active");
+  return clickedSquare;
+}
+
+function findActiveSquare() {
+  for (let i = 1; i <= 5; i++) {
+    const square = activeRow.querySelector(`.grid_letter_${i}`);
+    if (square.classList.contains("grid__letter_active")) {
+      return i;
+    }
+  }
+  return null;
 }
 
 function addLetter(char) {
-  const emptySquareIndex = findEmptySquare();
-  if (emptySquareIndex !== 0) {
-    const square = activeRow.querySelector(`.grid_letter_${emptySquareIndex}`);
-    square.textContent = char;
+  if (char.length < 2) {
+    const currentIndex = findActiveSquare();
+
+    if (currentIndex !== null) {
+      const currentSquare = activeRow.querySelector(
+        `.grid_letter_${currentIndex}`,
+      );
+      currentSquare.textContent = char;
+
+      if (currentIndex < 5) {
+        currentSquare.classList.remove("grid__letter_active");
+        const nextSquare = activeRow.querySelector(
+          `.grid_letter_${currentIndex + 1}`,
+        );
+        nextSquare.classList.add("grid__letter_active");
+      }
+    }
   }
 }
 
 function removeLetter() {
-  const emptySquareIndex = findEmptySquare();
-  // Se o próximo vazio é o 0, significa que a linha está cheia, então apagamos o 5
-  // Se não, apagamos o anterior ao vazio
-  const indexToDelete = emptySquareIndex === 0 ? 5 : emptySquareIndex - 1;
+  const currentIndex = findActiveSquare();
 
-  if (indexToDelete > 0) {
-    const square = activeRow.querySelector(`.grid_letter_${indexToDelete}`);
-    square.textContent = "";
+  if (currentIndex !== null) {
+    const currentSquare = activeRow.querySelector(
+      `.grid_letter_${currentIndex}`,
+    );
+
+    // Tem uma letra? Apaga a letra e mantém o foco nele.
+    if (currentSquare.textContent !== "") {
+      currentSquare.textContent = "";
+    }
+    // O quadrado atual está vazio? Volta para o anterior e apaga.
+    else if (currentIndex > 1) {
+      currentSquare.classList.remove("grid__letter_active");
+
+      const prevIndex = currentIndex - 1;
+      const prevSquare = activeRow.querySelector(`.grid_letter_${prevIndex}`);
+
+      prevSquare.classList.add("grid__letter_active");
+      prevSquare.textContent = "";
+    }
   }
 }
 
-function handleEnterAction() {
+async function handleEnterAction() {
   let typedWord = "";
   const squares = activeRow.querySelectorAll(".grid_letter");
 
-  squares.forEach((s) => (typedWord += s.textContent));
+  // 1. Captura a palavra e garante que está em minúscula para o JSON
+  squares.forEach((s) => (typedWord += s.textContent.trim().toUpperCase()));
 
   if (typedWord.length < 5) {
     shakeAnimation(activeRow);
     return;
   }
 
-  if (validateWord(typedWord)) {
-    const colors = compareWords(pickWord, typedWord);
+  const isValid = validateWord(typedWord);
+
+  if (isValid) {
+    const colors = compareWords(
+      pickWord.toUpperCase(),
+      typedWord.toUpperCase(),
+    );
+
+    // Pinta o teclado e os quadrados
     keyboardPainter(typedWord, colors);
+    await revealSequence(squares, colors);
 
-    // Pinta os quadrados
-    squares.forEach((sq, i) => {
-      sq.classList.add(`grid__letter-color_${colors[i]}`);
-    });
-
-    // --- ATUALIZAÇÃO DE ESTADO ---
+    // Troca de Linha
     activeRow.classList.remove("grid__row_active");
-    rowIndex++;
-    activeRow = document.querySelector(`.grid__${rowIndex}_row`);
-    activeRow.classList.add("grid__row_active");
+    squares.forEach((sq) => sq.classList.remove("grid__letter_active"));
 
-    if (!activeRow) {
-      console.log("Fim de jogo ou limite de linhas atingido");
+    rowIndex++;
+    const nextRow = document.querySelector(`.grid__${rowIndex}_row`);
+
+    if (nextRow) {
+      activeRow = nextRow;
+      activeRow.classList.add("grid__row_active");
+      activeRow
+        .querySelector(".grid_letter_1")
+        .classList.add("grid__letter_active");
     }
   } else {
     shakeAnimation(activeRow);
+  }
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function revealSequence(squares, colors) {
+  for (let i = 0; i < squares.length; i++) {
+    squares[i].classList.add(`grid__letter-color_${colors[i]}`);
+    squares[i].classList.add("letter__transition");
+    // Efeito cascata
+    await sleep(200);
   }
 }
 
@@ -180,4 +276,8 @@ function keyboardPainter(typedWord, colors) {
     letterToPaint.classList.add(`kbd__color_${colors[0]}`);
     colors = colors.slice(1);
   }
+}
+
+function isLetter(str) {
+  return str.length === 1 && str.match(/[a-z]/i);
 }
