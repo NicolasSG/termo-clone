@@ -14,6 +14,11 @@ body {
   user-select: none;
 }
 
+/* :root {
+  --first_dueto_color: #1e90ff;
+  --second_dueto_color: #ffffff;
+} */
+
 .header {
   justify-items: center;
 }
@@ -254,19 +259,19 @@ body {
   border-bottom: 9px solid hsl(333, 6%, 28%);
 }
 
-.grid__letter-color_gray {
+.grid__letter-color_black {
   background-color: hsl(343, 8%, 18%);
   animation: mymove 1s normal;
   /* animation: 0.45s linear flip 0s forwards; */
 }
 
-.grid__letter-color_green {
-  background-color: hsl(171, 47%, 43%);
+.grid__letter-color_yellow {
+  background-color: hsl(38, 55%, 62%);
   animation: mymove 1s normal;
 }
 
-.grid__letter-color_yellow {
-  background-color: hsl(38, 55%, 62%);
+.grid__letter-color_green {
+  background-color: hsl(171, 47%, 43%);
   animation: mymove 1s normal;
 }
 
@@ -331,7 +336,7 @@ body {
 }
 
 .kbd__color_gray {
-  background-color: hsl(343, 9%, 32%);
+  background-color: hsl(345, 9%, 18%);
   animation-name: fadeIn;
   animation-duration: 0.4s;
   animation-timing-function: ease-in;
@@ -348,6 +353,19 @@ body {
 
 .kbd__color_green {
   background-color: hsl(171, 47%, 43%);
+  opacity: 0; /* Ensures the initial state is transparent before animation starts */
+  animation-name: fadeIn;
+  animation-duration: 0.4s; /* How long the animation takes */
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards; /* Ensures the final state (opacity: 1) persists after animation */
+}
+
+.kbd__color_dueto {
+  background: linear-gradient(
+    to right,
+    var(--first_dueto_color) 50%,
+    var(--second_dueto_color) 50%
+  );
   opacity: 0; /* Ensures the initial state is transparent before animation starts */
   animation-name: fadeIn;
   animation-duration: 0.4s; /* How long the animation takes */

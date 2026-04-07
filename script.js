@@ -39,6 +39,7 @@ function setupEventListeners() {
   const keyboard = document.querySelector(".keyboard");
   const hideMenuButton = document.querySelector(".header__hide");
   const gridContainer = document.querySelector(".main__grid");
+  const termoButton = document.querySelector(".header__nav_game_termo");
   const duetoButton = document.querySelector(".header__nav_game_dueto");
 
   keyboard.addEventListener("click", (e) => {
@@ -80,19 +81,13 @@ function setupEventListeners() {
 
   termoButton.addEventListener("click", () => {
     resetGameState();
-    gameType = "dueto";
+    gameType = "termo";
     const container = document.querySelector(".main__grid");
-    const template = document.querySelector("#dueto__template");
+    const template = document.querySelector("#termo__template");
     container.innerHTML = "";
     container.appendChild(template.content.cloneNode(true));
 
-    // Define as linhas iniciais - dueto
-    activeRow2.push(
-      document.querySelector(`.main__grid_dueto_1 > .grid__${rowIndex}_row`),
-    );
-    activeRow2.push(
-      document.querySelector(`.main__grid_dueto_2 > .grid__${rowIndex}_row`),
-    );
+    activeRow = document.querySelector(`.grid__${rowIndex}_row`);
   });
 
   duetoButton.addEventListener("click", () => {
@@ -174,7 +169,6 @@ function findActiveSquare() {
       }
     }
     return indexes;
-    console.log(indexes[0]);
   }
 
   return null;
@@ -419,7 +413,7 @@ async function revealSequence(squares, colors) {
 function compareWords(secret, guess) {
   if (gameType === "termo") {
     const size = secret.length;
-    const result = new Array(size).fill("gray");
+    const result = new Array(size).fill("black");
     const secretLetterCount = {};
 
     // palavra secreta
@@ -452,8 +446,8 @@ function compareWords(secret, guess) {
     const size2 = secret[1].length;
     const secret1 = secret[0];
     const secret2 = secret[1];
-    const result1 = new Array(size1).fill("gray");
-    const result2 = new Array(size2).fill("gray");
+    const result1 = new Array(size1).fill("black");
+    const result2 = new Array(size2).fill("black");
     const secretLetterCount1 = {};
     const secretLetterCount2 = {};
 
@@ -538,7 +532,6 @@ function shakeAnimation(activeRow) {
 
 function keyboardPainter(typedWord, colors) {
   let colors1 = colors[0];
-
   let colors2 = colors[1];
   typedWord = typedWord.toUpperCase();
   if (gameType === "termo") {
@@ -550,13 +543,48 @@ function keyboardPainter(typedWord, colors) {
   } else {
     for (let letter of typedWord) {
       const letterToPaint = document.querySelector(`.kbd__${letter}`);
-      letterToPaint.classList.add(`kbd__color_${colors1[0]}`);
-      colors1 = colors1.slice(1);
-
-      letterToPaint.classList.add(`kbd__color_${colors2[0]}`);
-      colors2 = colors2.slice(1);
+      if (colors1[0] !== colors2[0]) {
+        // se não for a mesma cor
+        // console.log("cor 1 " + colors1[0] + "/cor 2 " + colors2[0]);
+        setDuetoColors(letterToPaint, colors1[0], colors2[0]);
+        letterToPaint.classList.add(`kbd__color_dueto`);
+        colors1 = colors1.slice(1);
+        colors2 = colors2.slice(1);
+      } else {
+        // se for uma cor só
+        letterToPaint.classList.add(`kbd__color_${colors1[0]}`);
+        colors1 = colors1.slice(1);
+      }
     }
   }
+}
+
+function setDuetoColors(element, color1, color2) {
+  let green = "hsl(171, 47%, 43%)";
+  let yellow = "hsl(38, 55%, 62%)";
+  let black = "hsl(345, 9%, 18%)";
+
+  console.log(color1, color2);
+  if (color1 === "green") {
+    color1 = green;
+  } else if (color1 === "yellow") {
+    color1 = yellow;
+  } else if (color1 === "black") {
+    color1 = black;
+  } else {
+  }
+
+  if (color2 === "green") {
+    color2 = green;
+  } else if (color2 === "yellow") {
+    color2 = yellow;
+  } else if (color2 === "black") {
+    color2 = black;
+  } else {
+  }
+  console.log(color1, color2);
+  element.style.setProperty("--first_dueto_color", color1);
+  element.style.setProperty("--second_dueto_color", color2);
 }
 
 function isLetter(str) {
