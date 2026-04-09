@@ -336,7 +336,7 @@ body {
 }
 
 .kbd__color_gray {
-  background-color: hsl(345, 9%, 18%);
+  background-color: hsl(343, 9%, 32%);
   animation-name: fadeIn;
   animation-duration: 0.4s;
   animation-timing-function: ease-in;

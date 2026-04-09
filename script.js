@@ -7,6 +7,8 @@ let activeRow = null;
 let activeRow2 = [];
 let activeSquare = document.querySelector(".grid__letter_active");
 let gameType = "termo";
+let blockRow1 = false;
+let blockRow2 = false;
 
 await initGame();
 
@@ -147,7 +149,6 @@ function changeActiveSquare(e) {
 }
 
 function findActiveSquare() {
-  const grid = document.querySelector(".main__grid");
   if (gameType === "termo") {
     for (let i = 1; i <= 5; i++) {
       const square = activeRow.querySelector(`.grid_letter_${i}`);
@@ -158,14 +159,23 @@ function findActiveSquare() {
   } else if (gameType === "dueto") {
     const indexes = [];
     for (let i = 1; i <= 5; i++) {
-      const square1 = activeRow2[0].querySelector(`.grid_letter_${i}`);
-      if (square1.classList.contains("grid__letter_active")) {
-        indexes[0] = i;
+      if (blockRow1) {
+        console.log("linha 1 bloqueada");
+      } else {
+        const square1 = activeRow2[0].querySelector(`.grid_letter_${i}`);
+        if (square1.classList.contains("grid__letter_active")) {
+          indexes[0] = i;
+        }
       }
 
-      const square2 = activeRow2[1].querySelector(`.grid_letter_${i}`);
-      if (square2.classList.contains("grid__letter_active")) {
-        indexes[1] = i;
+      if (blockRow2) {
+        console.log("linha 2 bloqueada");
+      } else {
+        const square2 = activeRow2[1].querySelector(`.grid_letter_${i}`);
+        console.log(square2.classList.contains("grid__letter_active"));
+        if (square2.classList.contains("grid__letter_active")) {
+          indexes[1] = i;
+        }
       }
     }
     return indexes;
@@ -177,9 +187,9 @@ function findActiveSquare() {
 function addLetter(char) {
   if (char.length < 2) {
     const currentIndex = findActiveSquare();
+    console.log(currentIndex[0], currentIndex[1]);
 
-    if (currentIndex[1] === undefined) {
-      // se tiver undefined no segundo index, quer dizer que é "termo"
+    if (gameType === "termo") {
       const currentSquare = activeRow.querySelector(
         `.grid_letter_${currentIndex}`,
       );
@@ -192,31 +202,36 @@ function addLetter(char) {
         );
         nextSquare.classList.add("grid__letter_active");
       }
-    } else if (currentIndex[2] === undefined) {
-      // se tiver undefined no terceiro index, quer dizer que é "dueto"
+    } else if (gameType === "dueto") {
+      // Usa o índice da linha que está ativa
+      const activeIndex = !blockRow1 ? currentIndex[0] : currentIndex[1];
 
-      const currentSquare1 = activeRow2[0].querySelector(
-        `.grid_letter_${currentIndex[0]}`,
-      );
-      currentSquare1.textContent = char; // preenche primeiro grid
-
-      const currentSquare2 = activeRow2[1].querySelector(
-        `.grid_letter_${currentIndex[1]}`,
-      );
-      currentSquare2.textContent = char; // preenche segundo grid
-
-      if (currentIndex[0] < 5) {
-        currentSquare1.classList.remove("grid__letter_active");
-        const nextSquare1 = activeRow2[0].querySelector(
-          `.grid_letter_${currentIndex[0] + 1}`,
+      if (!blockRow1) {
+        const currentSquare1 = activeRow2[0].querySelector(
+          `.grid_letter_${activeIndex}`,
         );
-        nextSquare1.classList.add("grid__letter_active");
+        currentSquare1.textContent = char;
 
-        currentSquare2.classList.remove("grid__letter_active");
-        const nextSquare2 = activeRow2[1].querySelector(
-          `.grid_letter_${currentIndex[1] + 1}`,
+        if (activeIndex < 5) {
+          currentSquare1.classList.remove("grid__letter_active");
+          activeRow2[0]
+            .querySelector(`.grid_letter_${activeIndex + 1}`)
+            .classList.add("grid__letter_active");
+        }
+      }
+
+      if (!blockRow2) {
+        const currentSquare2 = activeRow2[1].querySelector(
+          `.grid_letter_${activeIndex}`,
         );
-        nextSquare2.classList.add("grid__letter_active");
+        currentSquare2.textContent = char;
+
+        if (activeIndex < 5) {
+          currentSquare2.classList.remove("grid__letter_active");
+          activeRow2[1]
+            .querySelector(`.grid_letter_${activeIndex + 1}`)
+            .classList.add("grid__letter_active");
+        }
       }
     }
   }
@@ -224,59 +239,51 @@ function addLetter(char) {
 
 function removeLetter() {
   const currentIndex = findActiveSquare();
-  if (currentIndex[1] === undefined) {
+
+  if (gameType === "termo") {
     const currentSquare = activeRow.querySelector(
       `.grid_letter_${currentIndex}`,
     );
 
-    // Tem uma letra? Apaga a letra e mantém o foco nele.
     if (currentSquare.textContent !== "") {
       currentSquare.textContent = "";
-    }
-    // O quadrado atual está vazio? Volta para o anterior e apaga.
-    else if (currentIndex > 1) {
+    } else if (currentIndex > 1) {
       currentSquare.classList.remove("grid__letter_active");
-
-      const prevIndex = currentIndex - 1;
-      const prevSquare = activeRow.querySelector(`.grid_letter_${prevIndex}`);
-
+      const prevSquare = activeRow.querySelector(
+        `.grid_letter_${currentIndex - 1}`,
+      );
       prevSquare.classList.add("grid__letter_active");
       prevSquare.textContent = "";
     }
-  } else if (currentIndex[2] === undefined) {
-    const currentSquare1 = activeRow2[0].querySelector(
-      `.grid_letter_${currentIndex[0]}`,
-    );
+  } else if (gameType === "dueto") {
+    const activeIndex = !blockRow1 ? currentIndex[0] : currentIndex[1];
 
-    const currentSquare2 = activeRow2[1].querySelector(
-      `.grid_letter_${currentIndex[1]}`,
-    );
-
-    // Tem uma letra? Apaga a letra e mantém o foco nele.
-    if (currentSquare1.textContent !== "") {
-      currentSquare1.textContent = "";
+    if (!blockRow1) {
+      const sq1 = activeRow2[0].querySelector(`.grid_letter_${activeIndex}`);
+      if (sq1.textContent !== "") {
+        sq1.textContent = "";
+      } else if (activeIndex > 1) {
+        sq1.classList.remove("grid__letter_active");
+        const prev1 = activeRow2[0].querySelector(
+          `.grid_letter_${activeIndex - 1}`,
+        );
+        prev1.classList.add("grid__letter_active");
+        prev1.textContent = "";
+      }
     }
-    if (currentSquare2.textContent !== "") {
-      currentSquare2.textContent = "";
-    }
 
-    // O quadrado atual está vazio? Volta para o anterior e apaga.
-    else if (currentIndex[0] > 1) {
-      currentSquare1.classList.remove("grid__letter_active");
-      currentSquare2.classList.remove("grid__letter_active");
-
-      const prevIndex = currentIndex[0] - 1;
-      const prevSquare1 = activeRow2[0].querySelector(
-        `.grid_letter_${prevIndex}`,
-      );
-      const prevSquare2 = activeRow2[1].querySelector(
-        `.grid_letter_${prevIndex}`,
-      );
-
-      prevSquare1.classList.add("grid__letter_active");
-      prevSquare1.textContent = "";
-      prevSquare2.classList.add("grid__letter_active");
-      prevSquare2.textContent = "";
+    if (!blockRow2) {
+      const sq2 = activeRow2[1].querySelector(`.grid_letter_${activeIndex}`);
+      if (sq2.textContent !== "") {
+        sq2.textContent = "";
+      } else if (activeIndex > 1) {
+        sq2.classList.remove("grid__letter_active");
+        const prev2 = activeRow2[1].querySelector(
+          `.grid_letter_${activeIndex - 1}`,
+        );
+        prev2.classList.add("grid__letter_active");
+        prev2.textContent = "";
+      }
     }
   }
 }
@@ -328,9 +335,11 @@ async function handleEnterAction() {
     const squares1 = activeRow2[0].querySelectorAll(".grid_letter");
     const squares2 = activeRow2[1].querySelectorAll(".grid_letter");
 
-    // 1. Captura a palavra e garante que está em minúscula para o JSON
-    squares1.forEach((s) => (typedWord += s.textContent.trim().toUpperCase()));
-
+    // Lê a palavra da linha que ainda está ativa
+    const activeSquares = !blockRow1 ? squares1 : squares2;
+    activeSquares.forEach(
+      (s) => (typedWord += s.textContent.trim().toUpperCase()),
+    );
     if (typedWord.length < 5) {
       shakeAnimation(activeRow2[0]);
       shakeAnimation(activeRow2[1]);
@@ -341,18 +350,18 @@ async function handleEnterAction() {
     let colors = "";
 
     if (isValid) {
-      if (gameType === "termo") {
-        colors = compareWords(pickWord.toUpperCase(), typedWord.toUpperCase());
-      } else {
-        let pickWords = [pickWordDueto1, pickWordDueto2];
-
-        colors = compareWords(pickWords, typedWord.toUpperCase());
-      }
+      let pickWords = [pickWordDueto1, pickWordDueto2];
+      colors = compareWords(pickWords, typedWord.toUpperCase());
 
       // Pinta o teclado e os quadrados
       keyboardPainter(typedWord, colors);
       let squaresDueto = [squares1, squares2];
       await revealSequence(squaresDueto, colors);
+
+      if (blockRow1 && blockRow2) {
+        // exibir mensagem de vitória
+        console.log("Você ganhou o Dueto!");
+      }
 
       // Troca de Linha
       activeRow2[0].classList.remove("grid__row_active");
@@ -367,14 +376,15 @@ async function handleEnterAction() {
       const nextRow2 = document.querySelector(
         `.main__grid_dueto_2 > .grid__${rowIndex}_row`,
       );
-
-      if (nextRow1) {
+      console.log(blockRow1, blockRow2);
+      if (!blockRow1) {
         activeRow2[0] = nextRow1;
         activeRow2[0].classList.add("grid__row_active");
         activeRow2[0]
           .querySelector(".grid_letter_1")
           .classList.add("grid__letter_active");
-
+      }
+      if (!blockRow2) {
         activeRow2[1] = nextRow2;
         activeRow2[1].classList.add("grid__row_active");
         activeRow2[1]
@@ -468,7 +478,7 @@ function compareWords(secret, guess) {
       }
     }
 
-    for (let i = 0; i < size1; i++) {
+    for (let i = 0; i < size2; i++) {
       if (guess[i] === secret2[i]) {
         result2[i] = "green";
         secretLetterCount2[guess[i]]--; // Tira do estoque
@@ -497,6 +507,25 @@ function compareWords(secret, guess) {
         }
       }
     }
+    let counter1 = 0;
+    result1.forEach((element) => {
+      console.log(element);
+      if (element === "green") {
+        counter1++;
+      }
+    });
+
+    let counter2 = 0;
+    result2.forEach((element) => {
+      if (element === "green") {
+        counter2++;
+      }
+    });
+
+    if (counter1 === 5) blockRow1 = true;
+    if (counter2 === 5) blockRow2 = true;
+
+    console.log(result1, result2);
     const results = [result1, result2];
 
     return results;
@@ -530,61 +559,70 @@ function shakeAnimation(activeRow) {
   }
 }
 
+const colorPriority = { green: 3, yellow: 2, black: 1 };
 function keyboardPainter(typedWord, colors) {
   let colors1 = colors[0];
   let colors2 = colors[1];
   typedWord = typedWord.toUpperCase();
+
   if (gameType === "termo") {
     for (let letter of typedWord) {
-      const letterToPaint = document.querySelector(`.kbd__${letter}`);
-      letterToPaint.classList.add(`kbd__color_${colors[0]}`);
+      const key = document.querySelector(`.kbd__${letter}`);
+      const newColor = colors[0];
+
+      const alreadyGreen = key.classList.contains("kbd__color_green");
+      const alreadyYellow = key.classList.contains("kbd__color_yellow");
+      const currentPriority = alreadyGreen ? 3 : alreadyYellow ? 2 : 1;
+
+      if ((colorPriority[newColor] ?? 0) > currentPriority) {
+        key.classList.remove(
+          "kbd__color_green",
+          "kbd__color_yellow",
+          "kbd__color_gray",
+        );
+        key.classList.add(`kbd__color_${newColor}`);
+      }
+
       colors = colors.slice(1);
     }
   } else {
     for (let letter of typedWord) {
-      const letterToPaint = document.querySelector(`.kbd__${letter}`);
-      if (colors1[0] !== colors2[0]) {
-        // se não for a mesma cor
-        // console.log("cor 1 " + colors1[0] + "/cor 2 " + colors2[0]);
-        setDuetoColors(letterToPaint, colors1[0], colors2[0]);
-        letterToPaint.classList.add(`kbd__color_dueto`);
-        colors1 = colors1.slice(1);
-        colors2 = colors2.slice(1);
-      } else {
-        // se for uma cor só
-        letterToPaint.classList.add(`kbd__color_${colors1[0]}`);
-        colors1 = colors1.slice(1);
-      }
+      const key = document.querySelector(`.kbd__${letter}`);
+      setDuetoColors(key, colors1[0], colors2[0]);
+      key.classList.add(`kbd__color_dueto`);
+      colors1 = colors1.slice(1);
+      colors2 = colors2.slice(1);
     }
   }
 }
 
 function setDuetoColors(element, color1, color2) {
-  let green = "hsl(171, 47%, 43%)";
-  let yellow = "hsl(38, 55%, 62%)";
-  let black = "hsl(345, 9%, 18%)";
+  const green = "hsl(171, 47%, 43%)";
+  const yellow = "hsl(38, 55%, 62%)";
+  const black = "hsl(345, 9%, 18%)";
 
-  console.log(color1, color2);
-  if (color1 === "green") {
-    color1 = green;
-  } else if (color1 === "yellow") {
-    color1 = yellow;
-  } else if (color1 === "black") {
-    color1 = black;
-  } else {
-  }
+  const colorMap = { green, yellow, black };
+  const priorityMap = { [green]: 3, [yellow]: 2, [black]: 1 };
 
-  if (color2 === "green") {
-    color2 = green;
-  } else if (color2 === "yellow") {
-    color2 = yellow;
-  } else if (color2 === "black") {
-    color2 = black;
-  } else {
-  }
-  console.log(color1, color2);
-  element.style.setProperty("--first_dueto_color", color1);
-  element.style.setProperty("--second_dueto_color", color2);
+  // Recupera as cores que já estão aplicadas na tecla
+  const currentColor1 =
+    element.style.getPropertyValue("--first_dueto_color") || black;
+  const currentColor2 =
+    element.style.getPropertyValue("--second_dueto_color") || black;
+
+  // Só atualiza se a nova cor tiver prioridade maior
+  const resolvedColor1 =
+    (priorityMap[colorMap[color1]] ?? 0) > (priorityMap[currentColor1] ?? 0)
+      ? colorMap[color1]
+      : currentColor1;
+
+  const resolvedColor2 =
+    (priorityMap[colorMap[color2]] ?? 0) > (priorityMap[currentColor2] ?? 0)
+      ? colorMap[color2]
+      : currentColor2;
+
+  element.style.setProperty("--first_dueto_color", resolvedColor1);
+  element.style.setProperty("--second_dueto_color", resolvedColor2);
 }
 
 function isLetter(str) {
@@ -595,6 +633,8 @@ function resetGameState() {
   rowIndex = 1;
   activeRow = null;
   activeRow2 = [];
+  blockRow1 = false;
+  blockRow2 = false;
 
   const allKeys = document.querySelectorAll(".kbd__letter");
   allKeys.forEach((key) => {
